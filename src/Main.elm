@@ -1,7 +1,8 @@
 module Main exposing (..)
 
-import Html exposing (Html,text)
+import Html exposing (Html,text, div, h1, img)
 import Json.Decode exposing (Decoder, field, Value,decodeValue, succeed, int, Error, errorToString)
+import Html.Attributes exposing (src)
 import Browser
 
 
@@ -36,9 +37,16 @@ update _ model =
 
 view : Model -> Html Msg
 view model = 
-    case decodeValue int model.currentTime of
+    div []
+        [ img [ src "/logo.svg" ] []
+        , h1 [] [    case decodeValue int model.currentTime of
         Result.Ok currentTime -> text (String.fromInt currentTime)
         Err e -> text (errorToString e)
+        ]
+        , h1 [] [ text "Your Elm App is working!" ]
+        ]
+
+
     
  
 

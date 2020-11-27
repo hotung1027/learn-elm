@@ -1,0 +1,88 @@
+version: 2.1
+jobs:
+  setup: 
+    docker: 
+      - image: circleci/node
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - deps-{{ checksum "elm.json" }}
+            - deps- # used if checksum fails
+
+      - run : 
+          name : "post"
+          command: |
+            if [ ! -d libsysconfcpus ]; then git clone https://github.com/obmarg/libsysconfcpus.git; fi
+            cd libsysconfcpus && ./configure && make && sudo make install
+
+      - run :
+          name: "override"
+          command: |
+            if [[ ! -e ~/.yarn/bin/yarn || $(yarn --version) != "${YARN_VERSION}" ]]; then
+              curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version $YARN_VERSION
+            fi
+      - run:
+          command: curl -L -o elm.gz "https://github.com/elm/compiler/releases/download/0.19.1/binary-for-linux-64-bit.gz"
+          name: "download elm binary"
+      
+      - run: 
+          command: |
+            gunzip elm.gz
+            chmod +x elm
+            sudo mv elm /usr/local/bin/
+
+      - save_cache:
+          key: deps-{{ checksum "elm.json" }}
+          paths:
+            - libsysconfcpus
+            - ~/.yarn
+            - ~/.yarn-cache
+            - /usr/local/bin/elm
+
+        
+
+  make:
+    docker:
+      - image: fpco/stack-build:lts
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore Cached Dependencies
+          keys:
+            - deps-{{ checksum "elm.json" }}
+            - deps
+      - run:
+          name: Resolve/Update Dependencies
+          command: elm make src/Main.elm --optimize --output=main.js
+      - save_cache:
+          key: build-artifact-{{ checksum "elm.json" }}
+          paths:
+            - .
+
+  build:
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore Cached Dependencies
+          keys:
+            - deps-{{ checksum "elm.json" }}
+            - build-artifact-{{ checksum "elm.json" }}
+      - run:
+          name: install elm-build-tool
+          command: yarn global add create-elm-app 
+      - run:
+          name: build static 
+          command: elm-app build
+
+
+
+workflows:
+  my_workflow:
+    jobs:
+      - setup
+      - make
+      - build:
+          requires:
+            - make

@@ -21,7 +21,9 @@
         }
     },
     "test-dependencies": {
-        "direct": {},
-        "indirect": {}
+        "direct": {
+        },
+        "indirect": {
+        }
     }
 }
