@@ -33,18 +33,15 @@ stages:
           curl -L -o elm.gz "https://github.com/elm/compiler/releases/download/$(elm-version)/binary-for-linux-64-bit.gz"
           gunzip elm.gz
           sudo chmod +x elm
-          sudo mv elm /usr/local/bin/
-
 
   - stage: build
     jobs:
     - job:
       steps:
       - bash: |
-          sudo chmod +x $HOME/.yarn/bin
-          export PATH="/usr/local/bin:$PATH"
           export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
           yarn global add create-elm-app 
+          sudo chmod +x $HOME/.yarn/bin
           elm make src/Main.elm --optimize --output=main.js
           elm-app build
       - task: PublishPipelineArtifact@1
