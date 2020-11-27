@@ -25,7 +25,7 @@ stages:
           cd libsysconfcpus && ./configure && make && sudo make install
       - bash: |
           if [[ ! -e ~/.yarn/bin/yarn || $(yarn --version) != "${YARN_VERSION}" ]]; then
-            curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version $YARN_VERSION
+            curl -o- -L https://yarnpkg.com/install.sh | bash -s
           fi
       - bash: |
           curl -L -o elm.gz "https://github.com/elm/compiler/releases/download/$(elm-version)/binary-for-linux-64-bit.gz"
