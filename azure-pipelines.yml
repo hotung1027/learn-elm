@@ -1,0 +1,49 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+name: $(Date:yyyyMMdd)$(Rev:.r)
+variables:
+  elm-version: 0.19.1
+
+trigger:
+  branches:
+    include:
+    - master
+    - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: setup
+    jobs:
+    - job:
+      steps:
+      - bash: |
+          if [ ! -d libsysconfcpus ]; then git clone https://github.com/obmarg/libsysconfcpus.git; fi
+          cd libsysconfcpus && ./configure && make && sudo make install
+      - bash: |
+          if [[ ! -e ~/.yarn/bin/yarn || $(yarn --version) != "${YARN_VERSION}" ]]; then
+            curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version $YARN_VERSION
+          fi
+      - bash: |
+          curl -L -o elm.gz "https://github.com/elm/compiler/releases/download/$(elm-version)/binary-for-linux-64-bit.gz"
+          gunzip elm.gz
+          chmod +x elm
+          sudo mv elm /usr/local/bin/
+
+  - stage: build
+    jobs:
+    - job:
+      steps:
+      - bash: |
+          yarn global add create-elm-app 
+          elm make src/Main.elm --optimize --output=main.js
+          elm-app build
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: $(System.DefaultWorkingDirectory)/build
+          artifactName: WebApp
+
+
